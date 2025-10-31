@@ -2,7 +2,7 @@
 # 🎙️ Offline RAG Voice Bot
 
 ## 🧠 Overview
-This project is an **offline Retrieval-Augmented Generation (RAG) Voice Bot** created as part of the **L&L AI Solutions Evaluation Task**.
+This project is an **offline Retrieval-Augmented Generation (RAG) Voice Bot**
 
 It listens to your voice question 🎤, searches for the answer from your local **PDF document**, and speaks the answer out loud 🔊 — all running **offline** using **Hugging Face models** and **LangChain**.
 
