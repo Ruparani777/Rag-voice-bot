@@ -29,3 +29,57 @@ It listens to your voice question 🎤, searches for the answer from your local 
 ---
 
 ## 📁 Project Structure
+
+Rag-voice-bot/
+│
+├── rag_voice_bot.py # Main voice bot script
+├── Sample_data.pdf # Local data file (your knowledge base)
+└── README.md # Project documentation
+
+---
+
+## 🧰 Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Ruparani777/Rag-voice-bot.git
+   cd Rag-voice-bot
+
+
+2.Install the dependencies:
+pip install SpeechRecognition pyaudio gtts playsound langchain langchain-community faiss-cpu PyPDF2 sentence-transformers transformers
+
+
+🚀 Run the Bot
+python rag_voice_bot.py
+
+🤖 Initializing Offline RAG Voice Bot...
+🎤 Speak your question...
+🗣️ You said: what is artificial intelligence
+
+💡 Retrieved relevant text:
+Artificial Intelligence (AI) refers to the simulation of human intelligence in machines...
+
+🔊 Speaking answer...
+
+
+Author
+
+Ruparani Thupakula
+roopathupakula01@gmail.com
+
+
+---
+
+### 🧩 Step 3: Commit the README
+- Scroll down → select **“Commit directly to the main branch”**
+- Click the green **“Commit new file”** button ✅
+
+---
+
+### 🧩 Step 4: Verify
+Now your repository page will automatically show your new README beautifully formatted! 🎉  
+
+---
+
+Would you like me to help you also add a **requirements.txt** file (so your reviewer can install all dependen
