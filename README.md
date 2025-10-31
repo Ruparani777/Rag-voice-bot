@@ -31,10 +31,10 @@ It listens to your voice question 🎤, searches for the answer from your local 
 ## 📁 Project Structure
 
 Rag-voice-bot/
-│
-├── rag_voice_bot.py # Main voice bot script
-├── Sample_data.pdf # Local data file (your knowledge base)
-└── README.md # Project documentation
+1. rag_voice_bot.py # Main voice bot script
+2. Sample_data.pdf # 
+3.README.md # Project documentation
+4.Output pdf 
 
 ---
 
