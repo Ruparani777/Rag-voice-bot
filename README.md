@@ -1,8 +1,8 @@
 # Rag-voice-bot
-# 🎙️ Offline RAG Voice Bot
+# 🎙️ RAG Voice Bot
 
 ## 🧠 Overview
-This project is an **offline Retrieval-Augmented Generation (RAG) Voice Bot**
+This project is an **Retrieval-Augmented Generation (RAG) Voice Bot**
 
 It listens to your voice question 🎤, searches for the answer from your local **PDF document**, and speaks the answer out loud 🔊 — all running **offline** using **Hugging Face models** and **LangChain**.
 
