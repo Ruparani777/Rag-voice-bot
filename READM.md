@@ -381,7 +381,17 @@ movi-ai-transport-agent/
 4. **Lazy-loaded CRUD/models** in `langgraph_agent/tools.py` (runtime imports inside methods)
 5. **Updated requirements.txt**: Removed langchain/langgraph, pinned pydantic==2.5.0
 
+---
 
+## 📝 Notes
+
+- **No external graph library**: Uses simple serial state machine for portability
+- **Page-context aware**: Agent knows if you're on BusDashboard or ManageRoute
+- **Consequence checking**: Prevents accidental deletions of booked resources
+- **Seeded data**: Ready to demo immediately after startup
+- **Frontend form integration**: Chat can trigger actions from UI forms
+
+---
 
 **Stack**: FastAPI, React, Vite, SQLModel, SQLite  
 **Status**: Ready for local testing 
