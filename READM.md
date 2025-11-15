@@ -1,263 +1,159 @@
-# 🚌 Movi — Multimodal Transport Management Agent #
+# 🚌 Movi — Multimodal Transport Management Agent
 
+Movi is an AI-powered, multimodal assistant built for the MoveInSync Shuttle admin console. It helps transport managers orchestrate both static (Stops, Paths, Routes) and dynamic (Trips, Deployments, Vehicles) operations using text, voice and image inputs. The project bundles a FastAPI backend, a React/Vite admin console, and a seeded SQLite database for demos.
 
-**Movi** is an AI-powered assistant integrated into the **MoveInSync Shuttle** admin console. It helps transport managers manage operations through voice, text, and image inputs using a stateful agent pipeline.Movi is a multimodal, knowledge-aware agent that helps MoveInSync transport managers orchestrate both static (Stops, Paths, Routes) and dynamic (Trips, Deployments, Vehicles) operations. The solution bundles a LangGraph-powered backend, a modern admin console, and a seeded dummy database ready for demos or extension.
+This README summarizes architecture, setup, demo steps, agent capabilities, and troubleshooting notes.
 
+---
 
+## Key highlights
 
----> **Assignment coverage**  
+- LangGraph-style stateful agent implemented as a lightweight state machine (no external graph library required)
+- Multimodal frontend: text chat, voice (Web Speech API), and image filename matching (mock/vision stub)
+- Consequence-aware actions: confirmation required before risky operations (e.g., removing a vehicle with bookings)
+- Seeded SQLite DB for immediate demos (stops, paths, routes, vehicles, drivers, trips, deployments)
+- ≥10 data-aware actions (CRUD and query operations for transport objects)
 
-> ✅ LangGraph agent with consequence-aware flows  
+---
 
-## 📋 Quick Summary> ✅ 10+ DB-backed tools covering CRUD operations  
-
-> ✅ Multimodal frontend (text, voice, image) with contextual UI  
-
-- ✅ **Full-stack application**: FastAPI backend + React/Vite frontend + SQLite database> ✅ Dummy SQLite database seeded with realistic transport data  
-
-- ✅ **Stateful agent**: Manual state machine pipeline (parse → context → consequences → execute → respond)> ✅ README + architecture diagram + demo checklist
-
-- ✅ **≥10 data-aware actions**: List, create, assign, remove, and update operations
-
-- ✅ **Consequence checking**: Warns users before risky operations (e.g., removing a booked vehicle)---
-
-- ✅ **Page-context awareness**: Agent knows current page (busDashboard or manageRoute)
-
-- ✅ **Multimodal inputs**: Text chat, voice (via Speech API), image matching (mock)## Repository Layout
-
-- ✅ **Seeded SQLite database**: 5 stops, 2 paths, 2 routes, 3 vehicles, 3 drivers, 2 trips
-
-
-**Terminal 2 — Frontend:**
-
-```powershell---
-
-cd frontend
-
-npm run dev## Getting Started
+## Repository layout
 
 ```
-
-### Prerequisites
-
-**Open browser:**
-
-```- Python 3.11+
-
-http://127.0.0.1:5173/- Node.js 18+
-
-```- pnpm or npm (examples use `npm`)
-
+movi-ai-transport-agent/
+├── backend/               # FastAPI backend (SQLModel + SQLite)
+│   ├── app/
+│   │   ├── main.py        # FastAPI entrypoint
+│   │   ├── models.py      # SQLModel ORM models
+│   │   ├── crud.py        # DB helpers
+│   │   ├── schemas.py     # Pydantic/SQLModel schemas
+│   │   ├── database.py    # SQLite configuration & seed
+│   │   └── seed_data.py   # DB seeding logic
+│   ├── db/
+│   │   └── movi.db        # Seeded SQLite file (created on first run)
+│   └── requirements.txt
+├── frontend/              # React + Vite admin console
+│   ├── src/
+│   │   ├── components/    # UI components (MoviAssistant, BusDashboard, ManageRoute)
+│   │   ├── hooks/         # useSpeech, etc.
+│   │   └── lib/           # api client
+│   ├── package.json
+│   └── vite.config.ts
+├── langgraph_agent/       # Lightweight agent state machine + tools
+│   ├── graph.py
+│   └── tools.py
+└── README.md
 ```
 
-**Backend setup**
+---
 
-## 🏗️ Architecture bash
+## Architecture (overview)
 
-cd backend
-
-```python -m venv .venv
-
-Frontend (React/Vite).venv\Scripts\activate    # Windows
-
-├── BusDashboard → View/manage daily tripspip install -r requirements.txt
-
-├── ManageRoute → CRUD routes/pathsuvicorn app.main:app --reload
-
-└── MoviAssistant → Chat with Movi agent```
-
-           ↓ HTTP/REST
-
-Backend (FastAPI)The first launch creates `db/movi.db` and seeds it with:
-
-├── /stops, /paths, /routes → Static assets
-
-├── /trips, /deployments → Dynamic operations- 5 stops, 2 paths, 2 routes
-
-├── /agent/action → Agent request handler- 3 vehicles, 3 drivers
-
-└── /vision/match → Image recognition (mock)- 2 daily trips (with booking percentages)
-
-           ↓ SQL- 1 active deployment
-
-Database (SQLite)
-
-├── Stops, Paths, Routes (static)### Frontend setup
-
-└── Vehicles, Drivers, Trips, Deployments (dynamic)
-
-``````bash
-
-cd frontend
-
-### Agent State Machinenpm install
-
-npm run dev
-
-``````
-
-**ARCHITECTURE**/
-[React Admin Console]  <--REST-->  [FastAPI Backend]  <--SQLModel-->  [SQLite Dummy DB]
+[React Admin Console]  <--REST-->  [FastAPI Backend]  <--SQLModel-->  [SQLite DB]
        |                                   |
-       | Web Speech API / uploads          | LangGraph StateGraph
+       | Web Speech API / file uploads     | LangGraph-style state machine
        v                                   v
   Movi Assistant Panel ---------> MoviAgent.handle_action()
-                                      | 10+ DB tools (CRUD + query)
-                                      | Consequence checks
-                                      | Confirmation loop for risky ops
-``````
+                                      • 10+ DB tools (CRUD + queries)
+                                      • Consequence checks & confirmation loop
 
-**User Input**
+The frontend proxies `/api` requests to `http://localhost:8000`, so run both apps concurrently for a full local demo.
 
-    ↓The Vite dev server proxies all `/api` requests to `http://localhost:8000`, so both apps should run concurrently.
+---
 
-[1] Parse Intent
+## Agent capabilities (sample actions)
 
-    ↓---
+Implemented tools include (but not limited to):
 
-[2] Check Context (page awareness)
+- list_unassigned_vehicles
+- get_trip_status
+- list_stops_for_path
+- list_routes_using_path
+- assign_vehicle_to_trip
+- remove_vehicle_from_trip (requires confirmation when consequence detected)
+- create_stop
+- create_path
+- create_route
+- update_route_status
+- list_daily_trips
+- list_deployments
+- list_available_drivers
 
-    ↓ Feature Walkthrough
+Consequence checking warns when an action may be risky (e.g., removing a vehicle that has bookings) and requires an explicit confirmation to proceed.
 
-[3] Check Consequences (warn if risky)
+---
 
-    ↓1. Bus Dashboard (`/busDashboard`)
+## Prerequisites
 
-[4] Execute Action (if no confirmation needed)
+- Python 3.11+ (for backend)
+- Node.js 18+ and npm (for frontend)
+- pnpm optional
+- Git (optional for cloning)
 
-    ↓- Live metrics for trips, deployments, and fleet utilization
+Windows-specific notes: the README commands below use PowerShell-friendly forms where appropriate.
 
-[5] Respond (format result)- Interactive table showing booking fill, assigned vehicle, and driver placeholders
+---
 
-    ↓- Pull-to-refresh button that re-fetches trips, deployments, vehicles
+## Quickstart (local)
 
-Agent Response
+Run the backend and frontend concurrently. The first backend run creates `db/movi.db` and seeds it with demo data.
 
-``` 2. Manage Route (`/manageRoute`)
+1) Backend (FastAPI)
 
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+# Start with auto-reload
+uvicorn app.main:app --reload
+```
 
+On first run the server will create and seed `backend/db/movi.db` with:
 
----- Form-driven creation of new stops (delegates to Movi agent for execution)
+- 5 stops, 2 paths, 2 routes
+- 3 vehicles (2 active, 1 inactive), 3 drivers
+- 2 daily trips and 1 active deployment
 
-- Snapshot views of all paths and their ordered stops
+2) Frontend (React + Vite)
 
-## 📊 Database Schema- Route table with status pills and shift details
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
+Open the app in your browser (default Vite URL shown in terminal, typically `http://127.0.0.1:5173`). The frontend proxies API calls to `http://localhost:8000`.
 
+---
 
-### Static Assets### 3. Movi Assistant Panel
+## Demo script (2–5 minutes)
 
-- **Stops**: stop_id, name, latitude, longitude
+1. Show static assets: open ManageRoute and list Stops/Paths/Routes.
+2. From ManageRoute, add a new Stop using the form (Movi executes the action).
+3. Switch to BusDashboard. Ask Movi (chat panel): “List unassigned vehicles.”
+4. Trigger “Remove the vehicle from ‘Bulk - 00:01’.” Show consequence warning, confirm, then proceed.
+5. Upload a sample screenshot named `Bulk-00-01.png` to `/vision/match` to demonstrate mock image matching.
+6. Use voice: ask “What is the status of Bulk - 08:30?” to demo STT & TTS flow.
 
-- **Paths**: path_id, path_name, ordered_stop_ids- **Context Awareness**: Maintains `currentPage` (`busDashboard` or `manageRoute`) and surfaces prompts tailored to the present workflow.
+---
 
-- **Routes**: route_id, path_id, route_display_name, shift_time, direction, status- **Text & Voice Input**: Users can type or dictate requests; the captured transcript pre-populates the chat.
+## API examples
 
-- **Consequence Flow**: Actions such as `remove_vehicle_from_trip` and `update_route_status` raise warnings when impactful, offering an inline “Confirm and proceed” path that resubmits with `confirmed: true`.
+Agent action (example request):
 
-### Dynamic Operations- **Vision Stub**: Image uploads send filenames to `/vision/match`. The mock implementation maps human-friendly names (e.g., `Bulk-00-01.png`) to trips for demo purposes.
-
-- **Vehicles**: vehicle_id, license_plate, type, capacity, is_active- **DB Tools (10+)**: Intents supported include `list_unassigned_vehicles`, `get_trip_status`, `list_stops_for_path`, `list_routes_using_path`, `assign_vehicle_to_trip`, `remove_vehicle_from_trip`, `create_stop`, `create_path`, `create_route`, `update_route_status`, `list_daily_trips`, `list_deployments`, and `list_available_drivers`.
-
-- **Drivers**: driver_id, name, phone_number, is_available
-
-- **DailyTrips**: trip_id, route_id, display_name, booking_status_percentage, live_status---
-
-- **Deployments**: deployment_id, trip_id, vehicle_id, driver_id
-
-## Demo Script (2–5 minutes)
-
-### Seeded Data
-
-- 5 stops: Campus Gate, Tech Park, Metro Station, City Center, Warehouse Hub1. **Intro & Context**
-
-- 2 paths: North Loop, South Loop   - Show layout, highlight persistent Movi panel, mention context awareness badge.
-
-- 2 routes with different shift times2. **Static Assets**
-
-- 3 vehicles (2 active, 1 inactive)   - From `manageRoute`, add a new stop via the form (Movi executes the action).
-
-- 3 drivers   - Ask Movi: “List routes using path North Loop.”
-
-- 2 daily trips with 1 vehicle deployment3. **Dynamic Operations**
-
-   - Switch to `busDashboard`; request “List unassigned vehicles.”
-
----   - Trigger “Remove the vehicle from ‘Bulk - 00:01’.” Demonstrate confirmation guard, then confirm.
-
-4. **Vision Check**
-
-## 🧠 Agent Actions (≥10 Implemented)   - Upload screenshot named `Bulk-00-01.png` (or similar) to prove image matching.
-
-5. **Voice Interaction**
-
-### Reads (No Consequence)   - Use microphone to ask “What is the status of Bulk - 08:30?” and observe STT & TTS.
-
-- `list_stops_for_path` → List stops in a path
-
-- `list_routes_using_path` → List routes using a pathWrap up with the architecture summary and highlight future extension hooks (live tracking, richer vision, role-based access).
-
-- `list_daily_trips` → List all trips
-
-- `list_deployments` → List all assignments---
-
-- `list_unassigned_vehicles` → Count unassigned vehicles
-
-- `get_trip_status` → Get trip status## Testing & Validation
-
-- `list_available_drivers` → List available drivers
-
-- **Backend**: cURL or Postman the REST endpoints (`/stops`, `/routes`, `/deployments`, `/agent/action`).
-
-### Creates (No Consequence)- **Frontend**: `npm run lint` to lint React code; manual verification via the demo script.
-
-- `create_stop` → Add a new stop- **Reliability**: Consequence guard ensures no vehicle removal happens while seats are booked unless confirmed.
-
-- `create_path` → Add a new path
-
-- `create_route` → Add a new route---
-
-
-
-### Actions (May Require Confirmation)## Future Enhancements
-
-- `assign_vehicle_to_trip` → Assign vehicle & driver to trip
-
-- `remove_vehicle_from_trip` → Remove vehicle (⚠️ warns if booked)- Replace filename heuristic with genuine OCR/vision pipeline (OpenAI Vision, Azure Cognitive Services, etc.).
-
-- `update_route_status` → Change route status (⚠️ warns if deactivating)- Expand LangGraph to use LLM-based intent parsing and memory for multi-turn reasoning.
-
-- Integrate live telemetry APIs for real-time vehicle health and location.
-
----- Introduce role-based access control and per-user session contexts.
-
-
-
-## 📌 Example API Call---
-
-
-
-**Request:**## Credits
-
-```json
-
-POST http://127.0.0.1:8000/agent/action- Prepared for **Movi_ai_transport agemt*  
-
-Content-Type: application/json- Author: **Ruparani Thupakula** 
-
-- Date: _12 November 2025_
+```http
+POST http://127.0.0.1:8000/agent/action
+Content-Type: application/json
 
 {
-
   "intent": "list_daily_trips",
   "parameters": {},
-  "context": {
-    "currentPage": "busDashboard"
-  }
+  "context": { "currentPage": "busDashboard" }
 }
 ```
 
-**Response (with consequence):**
+Response when consequence detected (example):
+
 ```json
 {
   "message": "Confirmation required before executing action.",
@@ -269,59 +165,66 @@ Content-Type: application/json- Author: **Ruparani Thupakula**
 }
 ```
 
-**To confirm:**
-```json
+To confirm and proceed:
+
+```http
+POST http://127.0.0.1:8000/agent/action
+Content-Type: application/json
+
 {
   "intent": "remove_vehicle_from_trip",
-  "parameters": {
-    "trip_id": 1,
-    "confirmed": true
-  },
-  "context": {
-    "currentPage": "busDashboard"
-  }
+  "parameters": { "trip_id": 1, "confirmed": true },
+  "context": { "currentPage": "busDashboard" }
 }
 ```
 
----
+Vision mock API (upload):
 
-## 🎤 Multimodal Features
-
-### Text
-Chat interface in MoviAssistant component
-
-### Voice (Speech-to-Text)
-`frontend/src/hooks/useSpeech.ts` hook captures audio and sends transcript to agent
-
-### Image (Filename Matching)
-```powershell
+```http
 POST http://127.0.0.1:8000/vision/match
 Content-Type: multipart/form-data
 file: <screenshot.png>
 ```
-Returns matching trip name and confidence score (mock implementation)
+
+The mock maps filenames to trip names and returns a confidence score for demo purposes.
 
 ---
 
-## 🛠️ Debugging
+## Database schema (high level)
 
-### Backend Logs
+- Stops: stop_id, name, latitude, longitude
+- Paths: path_id, path_name, ordered_stop_ids
+- Routes: route_id, path_id, display_name, shift_time, direction, status
+- Vehicles: vehicle_id, license_plate, type, capacity, is_active
+- Drivers: driver_id, name, phone_number, is_available
+- DailyTrips: trip_id, route_id, display_name, booking_status_percentage, live_status
+- Deployments: deployment_id, trip_id, vehicle_id, driver_id
+
+---
+
+## Debugging & utilities
+
+Start backend with debug logs:
+
 ```powershell
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level debug
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --log-level debug
 ```
 
-### Port Already in Use
+If port 8000 is in use (PowerShell):
+
 ```powershell
 Get-NetTCPConnection -LocalPort 8000 | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
 
-### Reset Database
+Reset the seeded database (deletes `db/movi.db`):
+
 ```powershell
-Remove-Item db\movi.db -ErrorAction SilentlyContinue
-# Restart uvicorn to recreate and seed
+Remove-Item backend\db\movi.db -ErrorAction SilentlyContinue
+# Restart backend to recreate and reseed
 ```
 
-### Test Agent Endpoint
+Test the agent endpoint from PowerShell:
+
 ```powershell
 $body = @{
     intent = "list_daily_trips"
@@ -337,62 +240,34 @@ Invoke-RestMethod -Uri 'http://127.0.0.1:8000/agent/action' `
 
 ---
 
-## 📁 Project Structure
+## Testing & validation
 
-```
-movi-ai-transport-agent/
-├── backend/
-│   ├── .venv/          # Python venv
-│   ├── app/
-│   │   ├── main.py     # FastAPI entrypoint
-│   │   ├── models.py   # SQLModel ORM
-│   │   ├── crud.py     # Database helpers
-│   │   ├── schemas.py  # Pydantic models
-│   │   ├── database.py # SQLite config
-│   │   ├── dependencies.py
-│   │   └── seed_data.py
-│   ├── db/
-│   │   └── movi.db     # SQLite file
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── components/ # Layout, MoviAssistant
-│   │   ├── pages/      # BusDashboard, ManageRoute
-│   │   ├── hooks/      # useSpeech
-│   │   ├── lib/        # api.ts
-│   │   ├── App.tsx     # React Router root
-│   │   └── main.tsx
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.ts
-├── langgraph_agent/
-│   ├── graph.py        # Agent state machine (no external graph lib)
-│   └── tools.py        # Agent tools (lazy imports)
-└── README.md
-```
+- Use cURL/Postman to hit REST endpoints (`/stops`, `/routes`, `/deployments`, `/agent/action`).
+- Frontend: run `npm run lint` and follow the demo script for manual validation.
 
 ---
 
-## ✅ Code Changes from Original
+## Future enhancements
 
-1. **Removed langchain/langgraph dependencies** (were causing Windows build conflicts)
-2. **Reimplemented agent** as a lightweight manual state machine in `langgraph_agent/graph.py`
-3. **Deferred imports** in `backend/app/main.py` to avoid circular dependencies
-4. **Lazy-loaded CRUD/models** in `langgraph_agent/tools.py` (runtime imports inside methods)
-5. **Updated requirements.txt**: Removed langchain/langgraph, pinned pydantic==2.5.0
-
----
-
-## 📝 Notes
-
-- **No external graph library**: Uses simple serial state machine for portability
-- **Page-context aware**: Agent knows if you're on BusDashboard or ManageRoute
-- **Consequence checking**: Prevents accidental deletions of booked resources
-- **Seeded data**: Ready to demo immediately after startup
-- **Frontend form integration**: Chat can trigger actions from UI forms
+- Replace filename-based vision stub with an actual OCR/vision pipeline
+- Expand LangGraph-style agent to use LLM-based intent parsing and memory
+- Add role-based access control and multi-user session contexts
+- Integrate live telemetry for real-time vehicle tracking
 
 ---
 
-**Stack**: FastAPI, React, Vite, SQLModel, SQLite  
-**Status**: Ready for local testing 
-**Created**: November 2025
+## Credits
+
+- Prepared for Movi_ai_transport agent
+- Author: Ruparani Thupakula
+- Date: November 2025
+
+---
+
+If you'd like, I can also:
+
+- Add a quick `docker-compose` to run both backend and frontend together
+- Produce a short demo video script and checklist
+- Generate Postman collection for the main API endpoints
+
+Tell me which addition you'd like and I will add it.
